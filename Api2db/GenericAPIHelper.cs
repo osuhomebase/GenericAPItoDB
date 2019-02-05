@@ -62,10 +62,11 @@ namespace Api2db
                 Console.WriteLine(e.ToString());
             }
 
-            Console.ReadLine();
+            //Console.ReadLine();
 
             return jsonResponse;
 
         }
+
     }
 }
