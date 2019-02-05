@@ -37,7 +37,7 @@ namespace Api2db
             string queryString = "SELECT * FROM RoomLocation";
 
             using (SqlConnection connection =
-             new SqlConnection(connectionString))
+            new SqlConnection(connectionString))
             {
                 // Create the Command and Parameter objects.
                 SqlCommand command = new SqlCommand(queryString, connection);
@@ -59,7 +59,13 @@ namespace Api2db
                 }
             }
 
-           return req.CreateResponse(HttpStatusCode.OK, "hi");
+            // test making an API call
+
+            GenericAPIHelper APItest = new GenericAPIHelper(config["APIUsername"], config["APIUsername"]);
+
+            object[] output = APItest.GetWebServiceResult(config["SampleAPIURL"]);
+
+            return req.CreateResponse(HttpStatusCode.OK, "hi");
 
             
 
