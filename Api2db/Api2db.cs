@@ -50,6 +50,7 @@ namespace Api2db
                         log.Info( reader["Description"] + "\t" + reader["Comments"] + " \t" + reader["CustomString1"]);
                     }
                     reader.Close();
+                    connection.Close();
                 }
                 catch (Exception ex)
                 {
