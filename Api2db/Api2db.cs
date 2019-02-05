@@ -7,6 +7,8 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Configuration;
+using System.Data;
+using System.Data.SqlClient;
 
 namespace Api2db
 {
@@ -29,7 +31,34 @@ namespace Api2db
 
             //log.Info(config["Values:NyuHousingAppsDbConn"]);
             log.Info(config["ConnectionStrings:NyuHousingApps:ConnectionString"]);
-            return req.CreateResponse(HttpStatusCode.OK, "hi");
+
+            string connectionString = config["ConnectionStrings:NyuHousingApps:ConnectionString"];
+
+            string queryString = "SELECT * FROM RoomLocation";
+
+            using (SqlConnection connection =
+             new SqlConnection(connectionString))
+            {
+                // Create the Command and Parameter objects.
+                SqlCommand command = new SqlCommand(queryString, connection);
+                try
+                {
+                    connection.Open();
+                    SqlDataReader reader = command.ExecuteReader();
+                    while (reader.Read())
+                    {
+                        log.Info( reader["Description"] + "\t" + reader["Comments"] + " \t" + reader["CustomString1"]);
+                    }
+                    reader.Close();
+                }
+                catch (Exception ex)
+                {
+
+                    return req.CreateResponse(HttpStatusCode.OK, ex.Message);
+                }
+            }
+
+           return req.CreateResponse(HttpStatusCode.OK, "hi");
 
             
 
