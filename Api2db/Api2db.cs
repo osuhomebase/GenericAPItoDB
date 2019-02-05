@@ -7,8 +7,9 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Configuration;
-using System.Data;
 using System.Data.SqlClient;
+using System.Collections.Generic;
+using System.Dynamic;
 
 namespace Api2db
 {
@@ -31,13 +32,15 @@ namespace Api2db
 
             //log.Info(config["Values:NyuHousingAppsDbConn"]);
             log.Info(config["ConnectionStrings:NyuHousingApps:ConnectionString"]);
+            log.Info(config["Values:APIUsername"]);
+            log.Info(config["Values:APIPassword"]);
+            log.Info(config["Values:SampleAPIURL"]);
 
             string connectionString = config["ConnectionStrings:NyuHousingApps:ConnectionString"];
 
             string queryString = "SELECT * FROM RoomLocation";
 
-            using (SqlConnection connection =
-            new SqlConnection(connectionString))
+            using (SqlConnection connection = new SqlConnection(connectionString))
             {
                 // Create the Command and Parameter objects.
                 SqlCommand command = new SqlCommand(queryString, connection);
@@ -61,21 +64,57 @@ namespace Api2db
 
             // test making an API call
 
-            GenericAPIHelper APItest = new GenericAPIHelper(config["APIUsername"], config["APIUsername"]);
+            GenericAPIHelper APItest = new GenericAPIHelper(config["Values:APIUsername"], config["Values:APIPassword"]);
+            object[] output = APItest.GetWebServiceResult(config["Values:SampleAPIURL"]);
+            string[] keys;
 
-            object[] output = APItest.GetWebServiceResult(config["SampleAPIURL"]);
+            try
+            {
+                // get keys
+                keys = output[0].JsonPropertyNames().ToArray();
+                log.Info(keys.Count().ToString());
+                // populate fields of each object and add to array
+                foreach (var row in output)
+                {
+                    foreach (var key in keys)
+                    {
+                        log.Info(key + "\t" + row.JsonPropertyValue(key));
+                    }
+                }  
+            }
 
-            return req.CreateResponse(HttpStatusCode.OK, "hi");
+            catch (Exception ex)
+            {
+                return req.CreateResponse(HttpStatusCode.OK, ex.Message);
+            }
 
-            
-
-           
+            return req.CreateResponse(HttpStatusCode.OK, "Great Work");
+  
         }
 
         public static string GetEnvironmentVariable(string name)
         {
             return name + ": " +
-                System.Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
+                Environment.GetEnvironmentVariable(name, EnvironmentVariableTarget.Process);
+        }
+
+
+        public static void AddProperty(ExpandoObject expando, string propertyName, object propertyValue)
+        {
+            var expandoDict = expando as IDictionary<string, object>;
+            if (expandoDict.ContainsKey(propertyName))
+                expandoDict[propertyName] = propertyValue;
+            else
+                expandoDict.Add(propertyName, propertyValue);
+        }
+
+        public static object ViewProperty(ExpandoObject expando, string propertyName)
+        {
+            var expandoDict = expando as IDictionary<string, object>;
+            if (expandoDict.ContainsKey(propertyName))
+                return expandoDict[propertyName];
+            else
+                return null;
         }
     }
 }
