@@ -31,14 +31,7 @@ namespace Api2db
             log.Info(config["ConnectionStrings:NyuHousingApps:ConnectionString"]);
             return req.CreateResponse(HttpStatusCode.OK, "hi");
 
-            RoomLocationDbContext RoomLocations = new RoomLocationDbContext();
-            var listRoomLocations = RoomLocations.RoomLocations;
-            foreach(var roomLocation in listRoomLocations)
-            {
-                resp += roomLocation.Description += "<br />&nbsp;";
-            }
-
-            return req.CreateResponse(HttpStatusCode.OK, resp);
+            
 
            
         }
