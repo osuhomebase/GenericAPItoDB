@@ -64,6 +64,7 @@ namespace Api2db
 
             GenericAPIHelper APItest = new GenericAPIHelper(config["Values:APIUsername"], config["Values:APIPassword"]);
             object[] output = APItest.GetWebServiceResult(config["Values:SampleAPIURL"]);
+            List<ExpandoObject> apps = new List<ExpandoObject>();
             string[] keys;
 
             try
@@ -74,10 +75,13 @@ namespace Api2db
                 // populate fields of each object and add to array
                 foreach (var row in output)
                 {
+                    dynamic expando = new ExpandoObject();
                     foreach (var key in keys)
                     {
                         log.Info(key + "\t" + row.JsonPropertyValue(key));
+                        ExpandoHelpers.AddProperty(expando, key, row.JsonPropertyValue(key));
                     }
+                    apps.Add(expando);
                 }  
             }
 
