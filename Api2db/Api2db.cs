@@ -20,8 +20,6 @@ namespace Api2db
         {
             log.Info("C# HTTP trigger function processed a request.");
 
-            var resp = "";
-
             log.Info(context.FunctionAppDirectory);
 
             var config = new ConfigurationBuilder()
@@ -99,22 +97,5 @@ namespace Api2db
         }
 
 
-        public static void AddProperty(ExpandoObject expando, string propertyName, object propertyValue)
-        {
-            var expandoDict = expando as IDictionary<string, object>;
-            if (expandoDict.ContainsKey(propertyName))
-                expandoDict[propertyName] = propertyValue;
-            else
-                expandoDict.Add(propertyName, propertyValue);
-        }
-
-        public static object ViewProperty(ExpandoObject expando, string propertyName)
-        {
-            var expandoDict = expando as IDictionary<string, object>;
-            if (expandoDict.ContainsKey(propertyName))
-                return expandoDict[propertyName];
-            else
-                return null;
-        }
     }
 }
