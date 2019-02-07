@@ -7,6 +7,9 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Collections.Generic;
+using System.Dynamic;
+using System.Linq;
 
 namespace HousingFunctions
 {
@@ -18,7 +21,7 @@ namespace HousingFunctions
             ILogger log)
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
-            log.LogInformation(Environment.GetEnvironmentVariable("AzureWebJobsStorage", EnvironmentVariableTarget.Process));
+            log.LogInformation(Environment.GetEnvironmentVariable("SampleAPIURL", EnvironmentVariableTarget.Process));
 
             string name = req.Query["name"];
 
@@ -26,9 +29,39 @@ namespace HousingFunctions
             dynamic data = JsonConvert.DeserializeObject(requestBody);
             name = name ?? data?.name;
 
+            GenericAPIHelper APItest = new GenericAPIHelper(Environment.GetEnvironmentVariable("APIUsername", EnvironmentVariableTarget.Process), Environment.GetEnvironmentVariable("APIPassword", EnvironmentVariableTarget.Process));
+            object[] output = APItest.GetWebServiceResult(Environment.GetEnvironmentVariable("SampleAPIURL", EnvironmentVariableTarget.Process));
+            List<ExpandoObject> apps = new List<ExpandoObject>();
+            string[] keys;
+
+            try
+            {
+                // get keys
+                keys = output[0].JsonPropertyNames().ToArray();
+                log.LogInformation(keys.Count().ToString());
+                // populate fields of each object and add to array
+                foreach (var row in output)
+                {
+                    dynamic expando = new ExpandoObject();
+                    foreach (var key in keys)
+                    {
+                        log.LogInformation(key + "\t" + row.JsonPropertyValue(key));
+                        ExpandoHelpers.AddProperty(expando, key, row.JsonPropertyValue(key));
+                    }
+                    apps.Add(expando);
+                }
+            }
+
+            catch (Exception ex)
+            {
+                return new BadRequestObjectResult(ex.Message);
+            }
+
             return name != null
                 ? (ActionResult)new OkObjectResult($"Hello, {name}")
                 : new BadRequestObjectResult("Please pass a name on the query string or in the request body");
+
+
         }
     }
 }
