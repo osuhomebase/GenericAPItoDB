@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -7,9 +6,7 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Configuration;
-using System.Data.SqlClient;
-using System.Collections.Generic;
-using System.Dynamic;
+
 
 namespace Api2db
 {
@@ -28,67 +25,72 @@ namespace Api2db
                  .AddEnvironmentVariables()
                  .Build();
 
-            //log.Info(config["Values:NyuHousingAppsDbConn"]);
-            log.Info(config["ConnectionStrings:NyuHousingApps:ConnectionString"]);
-            log.Info(config["Values:APIUsername"]);
-            log.Info(config["Values:APIPassword"]);
-            log.Info(config["Values:SampleAPIURL"]);
+            log.Info(Environment.GetEnvironmentVariable("AzureWebJobsStorage", EnvironmentVariableTarget.Process));
 
-            string connectionString = config["ConnectionStrings:NyuHousingApps:ConnectionString"];
 
-            string queryString = "SELECT * FROM RoomLocation";
+            ////log.Info(config["Values:NyuHousingAppsDbConn"]);
+            ////log.Info(config["ConnectionStrings:NyuHousingApps:ConnectionString"]);
+            //log.Info(config[$"APIUsername"]);
+            //log.Info(config["Values:APIPassword"]);
+            //log.Info(config["Values:SampleAPIURL"]);
 
-            using (SqlConnection connection = new SqlConnection(connectionString))
-            {
-                // Create the Command and Parameter objects.
-                SqlCommand command = new SqlCommand(queryString, connection);
-                try
-                {
-                    connection.Open();
-                    SqlDataReader reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        log.Info( reader["Description"] + "\t" + reader["Comments"] + " \t" + reader["CustomString1"]);
-                    }
-                    reader.Close();
-                    connection.Close();
-                }
-                catch (Exception ex)
-                {
+            log.Info("test");
 
-                    return req.CreateResponse(HttpStatusCode.OK, ex.Message);
-                }
-            }
+            //string connectionString = config["ConnectionStrings:NyuHousingApps:ConnectionString"];
+
+            //string queryString = "SELECT * FROM RoomLocation";
+
+            //using (SqlConnection connection = new SqlConnection(connectionString))
+            //{
+            //    // Create the Command and Parameter objects.
+            //    SqlCommand command = new SqlCommand(queryString, connection);
+            //    try
+            //    {
+            //        connection.Open();
+            //        SqlDataReader reader = command.ExecuteReader();
+            //        while (reader.Read())
+            //        {
+            //            log.Info( reader["Description"] + "\t" + reader["Comments"] + " \t" + reader["CustomString1"]);
+            //        }
+            //        reader.Close();
+            //        connection.Close();
+            //    }
+            //    catch (Exception ex)
+            //    {
+
+            //        return req.CreateResponse(HttpStatusCode.OK, ex.Message);
+            //    }
+            //}
 
             // test making an API call
 
-            GenericAPIHelper APItest = new GenericAPIHelper(config["Values:APIUsername"], config["Values:APIPassword"]);
-            object[] output = APItest.GetWebServiceResult(config["Values:SampleAPIURL"]);
-            List<ExpandoObject> apps = new List<ExpandoObject>();
-            string[] keys;
+            //GenericAPIHelper APItest = new GenericAPIHelper(config["Values:APIUsername"], config["Values:APIPassword"]);
+            //object[] output = APItest.GetWebServiceResult(config["Values:SampleAPIURL"]);
+            //List<ExpandoObject> apps = new List<ExpandoObject>();
+            //string[] keys;
 
-            try
-            {
-                // get keys
-                keys = output[0].JsonPropertyNames().ToArray();
-                log.Info(keys.Count().ToString());
-                // populate fields of each object and add to array
-                foreach (var row in output)
-                {
-                    dynamic expando = new ExpandoObject();
-                    foreach (var key in keys)
-                    {
-                        log.Info(key + "\t" + row.JsonPropertyValue(key));
-                        ExpandoHelpers.AddProperty(expando, key, row.JsonPropertyValue(key));
-                    }
-                    apps.Add(expando);
-                }  
-            }
+            //try
+            //{
+            //    // get keys
+            //    keys = output[0].JsonPropertyNames().ToArray();
+            //    log.Info(keys.Count().ToString());
+            //    // populate fields of each object and add to array
+            //    foreach (var row in output)
+            //    {
+            //        dynamic expando = new ExpandoObject();
+            //        foreach (var key in keys)
+            //        {
+            //            log.Info(key + "\t" + row.JsonPropertyValue(key));
+            //            ExpandoHelpers.AddProperty(expando, key, row.JsonPropertyValue(key));
+            //        }
+            //        apps.Add(expando);
+            //    }  
+            //}
 
-            catch (Exception ex)
-            {
-                return req.CreateResponse(HttpStatusCode.OK, ex.Message);
-            }
+            //catch (Exception ex)
+            //{
+            //    return req.CreateResponse(HttpStatusCode.OK, ex.Message);
+            //}
 
             return req.CreateResponse(HttpStatusCode.OK, "Great Work");
   
