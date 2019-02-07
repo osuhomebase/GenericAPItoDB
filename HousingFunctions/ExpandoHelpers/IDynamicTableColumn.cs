@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Api2db
+namespace HousingFunctions
 {
     public interface IDynamicTableColumn
     {

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Data;
 
-namespace Api2db
+namespace HousingFunctions
 {
     public interface IDynamicTable
     {

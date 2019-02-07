@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace Api2db
+namespace HousingFunctions
 {
     internal static class Converter
     {

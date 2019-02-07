@@ -6,7 +6,7 @@ using System.Dynamic;
 using System.Globalization;
 using System.Xml.Linq;
 
-namespace Api2db
+namespace HousingFunctions
 {
     public class ExpandoHelpers
     {

@@ -5,7 +5,7 @@ using System.Text;
 using Newtonsoft.Json;
 //using System.Web.Script.Serialization;
 
-namespace Api2db
+namespace HousingFunctions
 {
     public class GenericAPIHelper
     {
