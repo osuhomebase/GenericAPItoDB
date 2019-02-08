@@ -21,7 +21,7 @@ namespace HousingFunctions
 
         public static IEnumerable<string> JsonPropertyNames(this object obj)
         {
-            var dict = obj as IDictionary<string, object>;
+            var dict = obj.ToDictionary();
             if (dict == null)
                 return null;
             return dict.Keys;
