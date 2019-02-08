@@ -6,6 +6,9 @@ using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Configuration;
+using System.Collections.Generic;
+using System.Dynamic;
+using System.Linq;
 
 
 namespace Api2db
@@ -62,35 +65,35 @@ namespace Api2db
             //    }
             //}
 
-            // test making an API call
+           // test making an API call
 
-            //GenericAPIHelper APItest = new GenericAPIHelper(config["Values:APIUsername"], config["Values:APIPassword"]);
-            //object[] output = APItest.GetWebServiceResult(config["Values:SampleAPIURL"]);
-            //List<ExpandoObject> apps = new List<ExpandoObject>();
-            //string[] keys;
+           GenericAPIHelper APItest = new GenericAPIHelper(config["Values:APIUsername"], config["Values:APIPassword"]);
+            object[] output = APItest.GetWebServiceResult(config["Values:SampleAPIURL"]);
+            List<ExpandoObject> apps = new List<ExpandoObject>();
+            string[] keys;
 
-            //try
-            //{
-            //    // get keys
-            //    keys = output[0].JsonPropertyNames().ToArray();
-            //    log.Info(keys.Count().ToString());
-            //    // populate fields of each object and add to array
-            //    foreach (var row in output)
-            //    {
-            //        dynamic expando = new ExpandoObject();
-            //        foreach (var key in keys)
-            //        {
-            //            log.Info(key + "\t" + row.JsonPropertyValue(key));
-            //            ExpandoHelpers.AddProperty(expando, key, row.JsonPropertyValue(key));
-            //        }
-            //        apps.Add(expando);
-            //    }  
-            //}
+            try
+            {
+                // get keys
+                keys = output[0].JsonPropertyNames().ToArray();
+                log.Info(keys.Count().ToString());
+                // populate fields of each object and add to array
+                foreach (var row in output)
+                {
+                    dynamic expando = new ExpandoObject();
+                    foreach (var key in keys)
+                    {
+                        log.Info(key + "\t" + row.JsonPropertyValue(key));
+                        ExpandoHelpers.AddProperty(expando, key, row.JsonPropertyValue(key));
+                    }
+                    apps.Add(expando);
+                }
+            }
 
-            //catch (Exception ex)
-            //{
-            //    return req.CreateResponse(HttpStatusCode.OK, ex.Message);
-            //}
+            catch (Exception ex)
+            {
+                return req.CreateResponse(HttpStatusCode.OK, ex.Message);
+            }
 
             return req.CreateResponse(HttpStatusCode.OK, "Great Work");
   
