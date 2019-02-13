@@ -10,11 +10,8 @@ namespace HousingFunctions
     {
         public static object JsonPropertyValue(this object obj, string key)
         {
-            var dict = obj as IDictionary<string, object>;
-            if (dict == null)
-                return null;
             object val;
-            if (!dict.TryGetValue(key, out val))
+            if (!obj.ToDictionary().TryGetValue(key, out val))
                 return null;
             return val;
         }
