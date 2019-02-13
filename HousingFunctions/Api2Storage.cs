@@ -59,18 +59,38 @@ namespace HousingFunctions
                     table.AddRow(expando);
                 }
                 csvExport = table.AsCsv(true,',',true);
-                using (StreamWriter writer = new StreamWriter("Test.csv"))
-                {
-                    writer.Write(csvExport);
-                }
             }
-
             catch (Exception ex)
             {
                 return new BadRequestObjectResult(ex.Message);
             }
 
-           
+            string storageConnectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
+            //create a container CloudBlobContainer 
+            CloudStorageAccount storageAccount;
+            CloudBlobClient cloudBlobClient;
+
+            // Check whether the connection string can be parsed.
+            if (CloudStorageAccount.TryParse(storageConnectionString, out storageAccount))
+            {
+                // If the connection string is valid, proceed with operations against Blob storage here.
+                storageAccount = CloudStorageAccount.Parse(storageConnectionString);
+                cloudBlobClient = storageAccount.CreateCloudBlobClient();
+                //AzureWebJobsContainer is not created by default
+                CloudBlobContainer cloudBlobContainer = cloudBlobClient.GetContainerReference(Environment.GetEnvironmentVariable("AzureWebJobsContainer"));
+
+                // create blob and write to storage
+                CloudBlockBlob blockBlob = cloudBlobContainer.GetBlockBlobReference("test.csv");
+                await blockBlob.UploadTextAsync(csvExport);
+            }
+            else
+            {
+                // Otherwise, let the user know that they need to define the environment variable.
+                log.LogInformation(
+                    "A connection string has not been defined in the system environment variables. " +
+                    "Add a environment variable named 'storageconnectionstring' with your storage " +
+                    "connection string as a value.");
+            }
 
 
             return name != null
