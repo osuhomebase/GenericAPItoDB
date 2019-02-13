@@ -10,6 +10,8 @@ using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Dynamic;
 using System.Linq;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Blob;
 
 namespace HousingFunctions
 {
@@ -31,8 +33,14 @@ namespace HousingFunctions
 
             GenericAPIHelper APItest = new GenericAPIHelper(Environment.GetEnvironmentVariable("APIUsername", EnvironmentVariableTarget.Process), Environment.GetEnvironmentVariable("APIPassword", EnvironmentVariableTarget.Process));
             object[] output = APItest.GetWebServiceResult(Environment.GetEnvironmentVariable("SampleAPIURL", EnvironmentVariableTarget.Process));
-            List<ExpandoObject> apps = new List<ExpandoObject>();
             string[] keys;
+
+            string csvExport = "";
+
+            IDynamicTable table = new DynamicTable(DynamicTableType.Expandable);
+            dynamic trow;
+
+            //IDynamicTable table = new DynamicTable(DynamicTableType.Expandable);
 
             try
             {
@@ -48,7 +56,12 @@ namespace HousingFunctions
                         log.LogInformation(key + "\t" + row.JsonPropertyValue(key));
                         ExpandoHelpers.AddProperty(expando, key, row.JsonPropertyValue(key));
                     }
-                    apps.Add(expando);
+                    table.AddRow(expando);
+                }
+                csvExport = table.AsCsv(true,',',true);
+                using (StreamWriter writer = new StreamWriter("Test.csv"))
+                {
+                    writer.Write(csvExport);
                 }
             }
 
@@ -56,6 +69,9 @@ namespace HousingFunctions
             {
                 return new BadRequestObjectResult(ex.Message);
             }
+
+           
+
 
             return name != null
                 ? (ActionResult)new OkObjectResult($"Hello, {name}")
