@@ -22,10 +22,6 @@ namespace HousingFunctions
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             ILogger log)
         {
-            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            dynamic data = JsonConvert.DeserializeObject(requestBody);
-            name = name ?? data?.name;
-
             GenericAPIHelper APItest = new GenericAPIHelper(Environment.GetEnvironmentVariable("APIUsername", EnvironmentVariableTarget.Process), Environment.GetEnvironmentVariable("APIPassword", EnvironmentVariableTarget.Process));
             object[] output = APItest.GetWebServiceResult(Environment.GetEnvironmentVariable("SampleAPIURL", EnvironmentVariableTarget.Process));
             string[] keys;
@@ -33,8 +29,6 @@ namespace HousingFunctions
             string csvExport = "";
 
             IDynamicTable table = new DynamicTable(DynamicTableType.Expandable);
-            dynamic trow;
-
             //IDynamicTable table = new DynamicTable(DynamicTableType.Expandable);
 
             try
@@ -86,11 +80,7 @@ namespace HousingFunctions
                     "Add a environment variable named 'storageconnectionstring' with your storage " +
                     "connection string as a value.");
             }
-
-
             return (ActionResult)new OkObjectResult($"Hello, thanks for playing!");
-
-
         }
     }
 }
