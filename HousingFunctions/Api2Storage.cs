@@ -25,6 +25,7 @@ namespace HousingFunctions
             // set these parameters in query string (instead of as environment variables)
             string apiUrl = req.Query["url"];
             string azureWebJobsContainer = req.Query["container"];
+            string sqlTableName = req.Query["table"];
             string blockBlobFileName = req.Query["filename"];
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
@@ -32,11 +33,17 @@ namespace HousingFunctions
 
             apiUrl = apiUrl ?? data?.url;
             azureWebJobsContainer = azureWebJobsContainer ?? data?.container;
+            sqlTableName = sqlTableName ?? data?.table;
             blockBlobFileName = blockBlobFileName ?? data?.filename;
 
-            if (apiUrl == null && azureWebJobsContainer == null)
+            if (apiUrl == null || azureWebJobsContainer == null || sqlTableName == null)
             {
-                return new BadRequestObjectResult("Please pass 'url' and 'container' (and optionally, 'filename') as parameters in the query string.");
+                return new BadRequestObjectResult("Please pass 'url', 'container', and 'table' (optionally, 'filename') as parameters in the query string.");
+            }
+
+            if (sqlTableName.Contains("_")) // table name shouldn't contain underscores, so as not to mess up delimiter
+            {
+                return new BadRequestObjectResult("Please pass valid SQL 'table' name (without underscores) in the query string.");
             }
 
             GenericAPIHelper APItest = new GenericAPIHelper(Environment.GetEnvironmentVariable("APIUsername", EnvironmentVariableTarget.Process), Environment.GetEnvironmentVariable("APIPassword", EnvironmentVariableTarget.Process));
@@ -65,7 +72,7 @@ namespace HousingFunctions
                 }
                 csvExport = table.AsCsv(true, ',', true);
             }
-            catch (Exception ex)
+            catch
             {
                 return new BadRequestObjectResult("Please pass valid 'url' as a parameter in the query string.");
             }
@@ -95,14 +102,14 @@ namespace HousingFunctions
                         blockBlobFileName = DateTime.Now.ToString("MM-dd-yyyy HH:mm:ss");
                     }
 
-                    CloudBlockBlob blockBlob = cloudBlobContainer.GetBlockBlobReference(blockBlobFileName + ".csv");
-                    // log.LogInformation(blockBlobFileName + ".csv");
+                    CloudBlockBlob blockBlob = cloudBlobContainer.GetBlockBlobReference(sqlTableName + "_" + blockBlobFileName + ".csv");
+                    // log.LogInformation(sqlTableName + "_" + blockBlobFileName + ".csv");
 
                     await blockBlob.UploadTextAsync(csvExport);
                 }
                 catch
                 {
-                    return new BadRequestObjectResult("Please pass valid 'container' as a parameter in the query string.");
+                    return new BadRequestObjectResult("Please pass valid Azure 'container' name as a parameter in the query string.");
                 }
             }
             else
@@ -114,7 +121,7 @@ namespace HousingFunctions
                     "connection string as a value.");
             }
 
-            return new OkObjectResult($"Successful request! 'url' = {apiUrl}, 'container' = {azureWebJobsContainer}, 'filename' = {blockBlobFileName}");
+            return new OkObjectResult($"Successful request! 'url' = {apiUrl}, 'container' = {azureWebJobsContainer}, 'table' = {sqlTableName}, 'filename' = {blockBlobFileName}");
         }
     }
 }
