@@ -1,49 +1,87 @@
 using System;
+using System.Data;
 using System.IO;
-using System.Text;
-using System.Data.SqlClient;
-using System.Threading.Tasks;
+using System.Linq;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Extensions.Logging;
+using Microsoft.WindowsAzure.Storage;
+using Microsoft.WindowsAzure.Storage.Blob;
+using System.Data.SqlClient;
 
 namespace HousingFunctions
 {
     public static class File2AzureSQL
     {
         [FunctionName("File2AzureSQL")]
-        public static async Task RunAsync([BlobTrigger("%AzureWebJobsContainer%/{name}", Connection = "")]Stream myBlob, string name, ILogger log)
+        public static void Run([BlobTrigger("%AzureWebJobsContainer%/{name}", Connection = "")]Stream myBlob, string name, ILogger log)
         {
             log.LogInformation($"C# Blob trigger function Processed blob\n Name:{name} \n Size: {myBlob.Length} Bytes");
 
-            /*
-            string[] info = name.Split("_");
-            string sqlTable = info[0];
-            string csvFile = info[1];
-            // log.LogInformation(sqlTable + ", " + csvFile);
-            */
 
-            string sqlConnString = Environment.GetEnvironmentVariable("AzureSQLDBConnection");
+            DataTable csvDataTable = csv2DataTable(myBlob, log);
+            csvDataTable.TableName = "tempTable";
 
+            upsertSQLFromDataTable(Environment.GetEnvironmentVariable("AzureSQLDBConnection"), csvDataTable);
+
+
+        }
+
+        public static DataTable csv2DataTable(Stream csvFilePath, ILogger log)
+        {
+            DataTable dt = new DataTable();
             try
             {
-                using (SqlConnection conn = new SqlConnection(sqlConnString))
+
+                StreamReader sr = new StreamReader(csvFilePath);
+
+                DataRow row;
+
+                string line = sr.ReadLine();
+                string[] value = line.Split('\t');
+                foreach (string dc in value)
                 {
-                    conn.Open();
+                    dt.Columns.Add(new DataColumn(dc));
+                }
 
-                    StringBuilder sb = new StringBuilder();
-                    String text = sb.ToString();
-
-                    using (SqlCommand cmd = new SqlCommand(text, conn))
+                while (!sr.EndOfStream)
+                {
+                    value = sr.ReadLine().Split('\t');
+                    if (value.Length == dt.Columns.Count)
                     {
-
+                        row = dt.NewRow();
+                        row.ItemArray = value;
+                        dt.Rows.Add(row);
                     }
                 }
             }
-            catch (SqlException e)
+
+            catch (Exception ex)
             {
-                log.LogError(e.ToString());
+                log.LogInformation($"Error: {ex}");
             }
+            return dt;
         }
+
+
+        public static void upsertSQLFromDataTable(string connectionString, DataTable dt)
+        {
+            using (SqlConnection con = new SqlConnection(connectionString))
+            {
+                con.Open();
+                SqlBulkCopy bc = new SqlBulkCopy(connectionString, SqlBulkCopyOptions.TableLock);
+                bc.DestinationTableName = "dbo.test";
+                bc.BatchSize = dt.Rows.Count;
+                bc.WriteToServer(dt);
+                bc.Close();
+                con.Close();
+            }
+
+
+        }
+
+
+
     }
 }
+
