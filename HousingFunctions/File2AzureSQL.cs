@@ -16,7 +16,7 @@ namespace HousingFunctions
     public static class File2AzureSQL
     {
         [FunctionName("File2AzureSQL")]
-        public static void Run([BlobTrigger("%AzureWebJobsContainer%/{name}", Connection = "")]Stream myBlob, string name, ILogger log)
+        public static void Run([BlobTrigger("api2sql-incoming/{name}", Connection = "")]Stream myBlob, string name, ILogger log)
         {
             log.LogInformation($"C# Blob trigger function Processed blob\n Name:{name} \n Size: {myBlob.Length} Bytes");
 
@@ -28,6 +28,21 @@ namespace HousingFunctions
             upsertSQLFromDataTable(Environment.GetEnvironmentVariable("AzureSQLDBConnection", EnvironmentVariableTarget.Process), dataTable, sqlTable, log);
             stopwatch.Stop();
             log.LogInformation("Elapsed time: {0} ms", stopwatch.Elapsed.ToString("mm\\:ss\\.ff"));
+
+            // delete blob from api2sql-incoming after upsert
+            // note: blob is still present in container specified in Api2Storage
+            string storageConnectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage");
+            CloudStorageAccount storageAccount;
+            CloudBlobClient cloudBlobClient;
+            if (CloudStorageAccount.TryParse(storageConnectionString, out storageAccount))
+            {
+                storageAccount = CloudStorageAccount.Parse(storageConnectionString);
+                cloudBlobClient = storageAccount.CreateCloudBlobClient();
+
+                CloudBlobContainer container = cloudBlobClient.GetContainerReference("api2sql-incoming");
+                CloudBlockBlob blob = container.GetBlockBlobReference(name);
+                blob.DeleteAsync();
+            }
         }
 
         public static DataTable csv2DataTable(Stream csvFilePath, ILogger log)
