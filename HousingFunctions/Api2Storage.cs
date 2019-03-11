@@ -41,9 +41,14 @@ namespace HousingFunctions
                 return new BadRequestObjectResult("Please pass 'url', 'container', and 'table' (optionally, 'filename') as parameters in the query string.");
             }
 
+            if (!sqlTableName.Contains("."))
+            {
+                return new BadRequestObjectResult("Please pass valid SQL 'table' name with schema ([schema].[table]) in the query string.");
+            }
+
             if (sqlTableName.Contains("_") || (blockBlobFileName != null && blockBlobFileName.Contains("_"))) // table and file names shouldn't contain underscores, so as not to mess up delimiter
             {
-                return new BadRequestObjectResult("Please pass valid SQL 'table' name and/or CSV 'filename' (without underscores) in the query string.");
+                return new BadRequestObjectResult("Please pass valid SQL 'table' name and/or CSV 'filename' without underscores in the query string.");
             }
 
             GenericAPIHelper APItest = new GenericAPIHelper(Environment.GetEnvironmentVariable("APIUsername", EnvironmentVariableTarget.Process), Environment.GetEnvironmentVariable("APIPassword", EnvironmentVariableTarget.Process));
