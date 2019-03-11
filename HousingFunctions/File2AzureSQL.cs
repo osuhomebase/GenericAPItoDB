@@ -19,10 +19,8 @@ namespace HousingFunctions
         {
             log.LogInformation($"C# Blob trigger function Processed blob\n Name:{name} \n Size: {myBlob.Length} Bytes");
 
-            // string[] info = name.Split("_");
-            string sqlTable = "dbo.test"; // info[0];
-            // string csvFile = info[1];
-            // log.LogInformation(sqlTable + ", " + csvFile);
+            string[] info = name.Split("_");
+            string sqlTable = info[0];
 
             DataTable dataTable = csv2DataTable(myBlob, log);
             upsertSQLFromDataTable(Environment.GetEnvironmentVariable("AzureSQLDBConnection", EnvironmentVariableTarget.Process), dataTable, sqlTable, log);
