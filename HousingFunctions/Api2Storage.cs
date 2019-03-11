@@ -96,10 +96,12 @@ namespace HousingFunctions
                 cloudBlobClient = storageAccount.CreateCloudBlobClient();
 
                 CloudBlobContainer cloudBlobContainer;
+                CloudBlobContainer incomingContainer;
                 try
                 {
                     // note: azureWebJobsContainer is not created by default
                     cloudBlobContainer = cloudBlobClient.GetContainerReference(azureWebJobsContainer);
+                    incomingContainer = cloudBlobClient.GetContainerReference("api2sql-incoming");
 
                     // create blob and write to storage
                     if (blockBlobFileName == null)
@@ -108,9 +110,12 @@ namespace HousingFunctions
                     }
 
                     CloudBlockBlob blockBlob = cloudBlobContainer.GetBlockBlobReference(sqlTableName + "_" + blockBlobFileName + ".csv");
+                    CloudBlockBlob blobForSQLUpsert = incomingContainer.GetBlockBlobReference(sqlTableName + "_" + blockBlobFileName + ".csv");
                     // log.LogInformation(sqlTableName + "_" + blockBlobFileName + ".csv");
 
+                    // upload blob to specified container and api2sql-incoming for sql table upsert
                     await blockBlob.UploadTextAsync(csvExport);
+                    await blobForSQLUpsert.UploadTextAsync(csvExport);
                 }
                 catch
                 {
