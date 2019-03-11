@@ -90,52 +90,59 @@ namespace HousingFunctions
                         // update destination table and drop temp table
                         string pk = getPrimaryKey(connectionString, sqlTable, log);
 
-                        StringBuilder set = new StringBuilder();
-                        for (int i = 0; i < dataTable.Columns.Count; i++)
+                        if (!pk.Equals(""))
                         {
-                            if (!dataTable.Columns[i].ToString().Equals(pk))
+                            StringBuilder set = new StringBuilder();
+                            for (int i = 0; i < dataTable.Columns.Count; i++)
                             {
-                                set.Append($"TARGET.{dataTable.Columns[i].ToString()} = SOURCE.{dataTable.Columns[i].ToString()}");
+                                if (!dataTable.Columns[i].ToString().Equals(pk))
+                                {
+                                    set.Append($"TARGET.{dataTable.Columns[i].ToString()} = SOURCE.{dataTable.Columns[i].ToString()}");
+                                    if (i != dataTable.Columns.Count - 1)
+                                    {
+                                        set.Append(", ");
+                                    }
+                                    else
+                                    {
+                                        set.Append(" ");
+                                    }
+                                }
+                            }
+
+                            StringBuilder insert = new StringBuilder();
+                            for (int i = 0; i < dataTable.Columns.Count; i++)
+                            {
+                                insert.Append($"{dataTable.Columns[i].ToString()}");
                                 if (i != dataTable.Columns.Count - 1)
                                 {
-                                    set.Append(", ");
+                                    insert.Append(", ");
                                 }
-                                else
+                            }
+
+                            StringBuilder values = new StringBuilder();
+                            for (int i = 0; i < dataTable.Columns.Count; i++)
+                            {
+                                values.Append($"SOURCE.{dataTable.Columns[i].ToString()}");
+                                if (i != dataTable.Columns.Count - 1)
                                 {
-                                    set.Append(" ");
+                                    values.Append(", ");
                                 }
                             }
-                        }
 
-                        StringBuilder insert = new StringBuilder();
-                        for (int i = 0; i < dataTable.Columns.Count; i++)
+                            cmd.CommandText = $"MERGE INTO {sqlTable} as TARGET " +
+                                  "USING #tmp AS SOURCE " +
+                                  "ON " +
+                                  $"TARGET.{pk}=SOURCE.{pk} " +
+                                  "when matched then " +
+                                  $"UPDATE SET {set.ToString()}" +
+                                  "when not matched then " +
+                                  $"INSERT ({insert.ToString()}) values ({values.ToString()});";
+                            cmd.ExecuteNonQuery();
+                        }
+                        else
                         {
-                            insert.Append($"{dataTable.Columns[i].ToString()}");
-                            if (i != dataTable.Columns.Count - 1)
-                            {
-                                insert.Append(", ");
-                            }
+                            throw new Exception("Table must have primary key.");
                         }
-
-                        StringBuilder values = new StringBuilder();
-                        for (int i = 0; i < dataTable.Columns.Count; i++)
-                        {
-                            values.Append($"SOURCE.{dataTable.Columns[i].ToString()}");
-                            if (i != dataTable.Columns.Count - 1)
-                            {
-                                values.Append(", ");
-                            }
-                        }
-
-                        cmd.CommandText = $"MERGE INTO {sqlTable} as TARGET " +
-                              "USING #tmp AS SOURCE " +
-                              "ON " +
-                              $"TARGET.{pk}=SOURCE.{pk} " +
-                              "when matched then " +
-                              $"UPDATE SET {set.ToString()}" +
-                              "when not matched then " +
-                              $"INSERT ({insert.ToString()}) values ({values.ToString()});";
-                        cmd.ExecuteNonQuery();
 
                         conn.Close();
                     }
