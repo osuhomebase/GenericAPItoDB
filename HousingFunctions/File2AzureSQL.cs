@@ -9,6 +9,7 @@ using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Blob;
 using System.Data.SqlClient;
 using System.Text;
+using System.Diagnostics;
 
 namespace HousingFunctions
 {
@@ -22,8 +23,11 @@ namespace HousingFunctions
             string[] info = name.Split("_");
             string sqlTable = info[0];
 
+            Stopwatch stopwatch = Stopwatch.StartNew();
             DataTable dataTable = csv2DataTable(myBlob, log);
             upsertSQLFromDataTable(Environment.GetEnvironmentVariable("AzureSQLDBConnection", EnvironmentVariableTarget.Process), dataTable, sqlTable, log);
+            stopwatch.Stop();
+            log.LogInformation("Elapsed time: {0} ms", stopwatch.Elapsed.ToString("mm\\:ss\\.ff"));
         }
 
         public static DataTable csv2DataTable(Stream csvFilePath, ILogger log)
