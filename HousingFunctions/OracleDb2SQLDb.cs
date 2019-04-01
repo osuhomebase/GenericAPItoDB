@@ -7,7 +7,7 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using System.Data.OracleClient;
+using Oracle.ManagedDataAccess.Client;
 
 namespace HousingFunctions
 {
@@ -18,11 +18,31 @@ namespace HousingFunctions
             [HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req,
             ILogger log)
         {
+            // set configuration name as parameter in query string
+            string configurationName = req.Query["config"];
 
-            string OracleConnectionString = Environment.GetEnvironmentVariable("OracleConnectionString");
-            log.LogInformation(OracleConnectionString);
+            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            dynamic data = JsonConvert.DeserializeObject(requestBody);
 
-            return (ActionResult)new OkObjectResult($"Hello, dude");
+            configurationName = configurationName ?? data?.config;
+
+            if (configurationName == null)
+            {
+                return new BadRequestObjectResult("Please specify configuration name ('config') in the query string.");
+            }
+
+            // connect to oracle db
+            string OracleConnectionString = new OracleConnectionStringBuilder()
+            {
+                DataSource = Environment.GetEnvironmentVariable("OracleDataSource", EnvironmentVariableTarget.Process),
+                UserID = Environment.GetEnvironmentVariable("OracleUserID", EnvironmentVariableTarget.Process),
+                Password = Environment.GetEnvironmentVariable("OraclePassword", EnvironmentVariableTarget.Process),
+            }.ConnectionString;
+
+            OracleConnection conn = new OracleConnection(OracleConnectionString);
+            conn.Open();
+
+            return new OkObjectResult("Connection established (" + conn.ServerVersion + ")");
         }
     }
 }
