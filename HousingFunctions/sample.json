@@ -1,11 +1,8 @@
 {
   "Queries": [
     {
-      "ConfigurationName": "",
-      "Fields": "",
-      "Schema": "",
-      "Tables": "",
-      "Query": ""
+      "ConfigurationName": "SampleConfig",
+      "Query": "SELECT field1, field2, field3 FROM schema.table"
     }
   ]
 }
