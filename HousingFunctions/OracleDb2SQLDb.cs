@@ -13,6 +13,8 @@ using Microsoft.WindowsAzure.Storage.Blob;
 using System.Data;
 using System.Text;
 using System.Collections.Generic;
+using System.Linq;
+using Microsoft.WindowsAzure.Storage.RetryPolicies;
 
 namespace HousingFunctions
 {
@@ -75,14 +77,22 @@ namespace HousingFunctions
                 {
                     cmd.CommandText = currConfig.Query;
 
-                    DataTable table = new DataTable();
-                    string csvExport = "";
-
-                    // run corresponding query, load results in data table and convert to csv
+                    // run corresponding query, load results to file
                     using (OracleDataReader dr = cmd.ExecuteReader())
                     {
-                        table.Load(dr);
-                        csvExport = DataTableToCSV(table);
+                        using (StreamWriter sw = new StreamWriter("temp.txt"))
+                        {
+                            var columnNames = Enumerable.Range(0, dr.FieldCount).Select(dr.GetName).ToList();
+                            sw.WriteLine(string.Join("\t", columnNames));
+                            while (dr.Read())
+                            {
+                                for (int i = 0; i < dr.FieldCount; i++)
+                                {
+                                    sw.Write(dr[i].ToString());
+                                    sw.Write(i == dr.FieldCount - 1 ? "\n" : "\t");
+                                }
+                            }
+                        }
                     }
 
                     string storageConnectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage", EnvironmentVariableTarget.Process);
@@ -98,11 +108,25 @@ namespace HousingFunctions
                         storageAccount = CloudStorageAccount.Parse(storageConnectionString);
                         cloudBlobClient = storageAccount.CreateCloudBlobClient();
 
+                        // adapted from https://www.red-gate.com/simple-talk/cloud/platform-as-a-service/azure-blob-storage-part-4-uploading-large-blobs/
+                        TimeSpan backOffPeriod = TimeSpan.FromSeconds(2);
+                        int retryCount = 1;
+                        BlobRequestOptions bro = new BlobRequestOptions()
+                        {
+                            SingleBlobUploadThresholdInBytes = 1024 * 1024,
+                            ParallelOperationThreadCount = 1,
+                            RetryPolicy = new ExponentialRetry(backOffPeriod, retryCount),
+                        };
+                        cloudBlobClient.DefaultRequestOptions = bro;
+
                         CloudBlobContainer cloudBlobContainer = cloudBlobClient.GetContainerReference(Environment.GetEnvironmentVariable("AzureWebJobsContainer", EnvironmentVariableTarget.Process));
                         CloudBlockBlob blockBlob = cloudBlobContainer.GetBlockBlobReference($"{currConfig.ConfigurationName} {DateTime.Now.ToString("MM-dd-yyyy HH:mm:ss")}.csv");
 
                         // upload csv to blob
-                        await blockBlob.UploadTextAsync(csvExport);
+                        await blockBlob.UploadFromFileAsync("temp.txt");
+
+                        // clear temp file
+                        File.WriteAllText("temp.txt", string.Empty);
                     }
                     else
                     {
@@ -118,27 +142,6 @@ namespace HousingFunctions
             }
 
             return new OkObjectResult("Successful query!");
-        }
-
-        public static string DataTableToCSV(DataTable table)
-        {
-            var result = new StringBuilder();
-            for (int i = 0; i < table.Columns.Count; i++)
-            {
-                result.Append(table.Columns[i].ColumnName);
-                result.Append(i == table.Columns.Count - 1 ? "\n" : "\t");
-            }
-
-            foreach (DataRow row in table.Rows)
-            {
-                for (int i = 0; i < table.Columns.Count; i++)
-                {
-                    result.Append(row[i].ToString());
-                    result.Append(i == table.Columns.Count - 1 ? "\n" : "\t");
-                }
-            }
-
-            return result.ToString();
         }
     }
 
