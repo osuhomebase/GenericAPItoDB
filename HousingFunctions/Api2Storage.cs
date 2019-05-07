@@ -75,7 +75,8 @@ namespace HousingFunctions
                     }
                     table.AddRow(expando);
                 }
-                csvExport = table.AsCsv(true, '\t', true);
+
+                csvExport = table.AsCsv(true,'\t',true);
             }
             catch
             {
